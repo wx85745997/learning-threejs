@@ -4,12 +4,15 @@
 
 <head>
     <title>Example 01.01 - Basic skeleton</title>
-    <script type="text/javascript" src="https://cdn.bootcss.com/three.js/r83/three.min.js"></script>
+    <script type="text/javascript" src="./libs/three.js"></script>
     <!--https://github.com/mrdoob/three.js/blob/a3c1c736a7c1b2c1db2857418f8e976aa55e370a/examples/js/controls/OrbitControls.js  -->
     <script src="./libs/OrbitControls.js"></script>
     <script src="./libs/Stats.js"></script>
     <script src="./libs/AsciiEffect.js"></script>
     <script src="https://cdn.bootcss.com/dat-gui/0.7.6/dat.gui.js"></script>
+    <script src="https://threejs.org/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+
+
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to
@@ -70,7 +73,7 @@
             // scene.add(pointLightHelper)
 
 
-           
+
 
 
 
@@ -80,16 +83,16 @@
             //相当于设置一个背景
             renderer.setClearColor(new THREE.Color(0x000000));
             renderer.shadowMap.enabled = true;
-            renderer.shadowMapType = THREE.PCFSoftShadowMap;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.setSize(window.innerWidth, window.innerHeight);
             // show axes in the screen
-            var axes = new THREE.AxisHelper(50);
+            var axes = new THREE.AxesHelper(50);
             scene.add(axes);
             // create the ground plane
 
             //地板
-            var planeGeometry = new THREE.PlaneGeometry(50, 50);
-            var planeMaterial = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+            var planeGeometry = new THREE.PlaneBufferGeometry(2000, 2000);
+            var planeMaterial = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
             var plane = new THREE.Mesh(planeGeometry, planeMaterial);
             plane.receiveShadow = true;
             // rotate and position the plane
@@ -101,7 +104,7 @@
             scene.add(plane);
             // create a cube
             var cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
-            var cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000, wireframe: true });
+            var cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, wireframe: true });
             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
             cube.castShadow = true; //default is false
             // position the cube
@@ -112,7 +115,7 @@
             scene.add(cube);
             // create a sphere
             var sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
-            var sphereMaterial = new THREE.MeshLambertMaterial();
+            var sphereMaterial = new THREE.MeshStandardMaterial();
             var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 
 
@@ -140,10 +143,71 @@
             // render the scene
 
 
+
+            //聚光
+            // var spotLight = new THREE.SpotLight(0xeeeeee);
+            // var spotLightHelper = new THREE.SpotLightHelper(spotLight);
+            // spotLight.position.set(15, 40, 35);
+            // spotLight.angle = Math.PI / 4;
+            // spotLight.penumbra = 0.05;
+            // spotLight.decay = 2;
+            // spotLight.distance = 200;
+            // spotLight.castShadow = true;
+            // spotLight.shadow.mapSize.width = 1024;
+            // spotLight.shadow.mapSize.height = 1024;
+            // spotLight.shadow.camera.near = 10;
+            // spotLight.shadow.camera.far = 200;
+            // shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+            // scene.add(shadowCameraHelper);
+
+
+            //方向光
+            // var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            // directionalLight.position.set(100, 60, 100);
+            // directionalLight.shadow.camera.near = 2;
+            // directionalLight.shadow.camera.far = 300;
+            // directionalLight.shadow.camera.left = -30;
+            // directionalLight.shadow.camera.right = 30;
+            // directionalLight.shadow.camera.top = 30;
+            // directionalLight.shadow.camera.bottom = -30;
+            // directionalLight.castShadow = true;
+            // scene.add(directionalLight);
+
+            //半球光
+            // var light = new THREE.HemisphereLight(0xffffff, 0x080820, 1);
+            // light.position.set(100, 60, 100);
+            // light.castShadow = true;
+            // scene.add(light);
+
+            //平面光
+            var width = 5;
+            var height = 5;
+            var intensity = 1;
+            var rectLight = new THREE.RectAreaLight(0xffffff, 100, 10, 10);
+            rectLight.position.set(30, 20, 10);
+            rectLight.lookAt(0, 0, 0);
+            scene.add(rectLight)
+
+            var rectLightMesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial());
+            rectLightMesh.scale.x = width;
+            rectLightMesh.scale.y = height;
+            rectLightMesh.rotation.y = Math.PI;
+            rectLight.add(rectLightMesh);
+            
+            var rectLightMeshBack = new THREE.Mesh(new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial({ color: 0x080808 }));
+            rectLightMeshBack.rotation.y = Math.PI;
+            rectLightMesh.add(rectLightMeshBack);
+
+
             var controls = new function () {
                 this.rotationSpeed = 0.02;
                 this.bouncingSpeed = 0.03
                 this.ambientLight = ambiColor
+                this.angle = Math.PI / 4
+                this.penumbra = 0.05
+                this.decay = 2
+                this.distance = 200
+                this.intensity = 1
             }
 
             var gui = new dat.GUI()
@@ -152,29 +216,40 @@
             gui.addColor(controls, 'ambientLight').onChange(function (e) {
                 ambientLight.color = new THREE.Color(e)
             })
+            gui.add(controls, 'angle', 0, Math.PI / 3).onChange(function (e) {
+                spotLight.angle = e
+            })
+            gui.add(controls, 'penumbra', 0, 1).onChange(function (e) {
+                spotLight.penumbra = e
+            })
+            gui.add(controls, 'decay', 1, 2).onChange(function (e) {
+                spotLight.decay = e
+            })
+            gui.add(controls, 'distance', 50, 200).onChange(function (e) {
+                spotLight.distance = e
+            })
+            gui.add(controls, 'intensity', 0, 2).onChange(function (e) {
+                spotLight.intensity = e
+            })
 
 
-            var spotLight = new THREE.SpotLight(0xeeeeee);
-            var spotLightHelper = new THREE.SpotLightHelper(spotLight);
-            spotLight.angle =50
-            spotLight.position.set(2, 100, 0);
-            spotLight.castShadow = true;
 
 
-            spotLight.shadow.mapSize.width = spotLight.shadow.mapSize.height = 2048;  // default
-            spotLight.shadow.camera.near = 0.1;       // default
-            spotLight.shadow.camera.far = 3000      // default
-         
-
-
-
-            //spotLight.target = sphere;
-            scene.add(spotLight)
-            scene.add(spotLightHelper)
-            //scene.add(spotLight.target);
+            // spotLight.target = sphere;
+            // scene.add(spotLight)
+            // scene.add(spotLightHelper)
+            // scene.add(spotLight.target);
 
             var step = 0
             function render() {
+                // shadowCameraHelper.update();
+     
+                // var t = ( Date.now() / 200 );
+                // var r = 15.0;
+                // var lx = r * Math.cos(t);
+                // var lz = r * Math.sin(t);
+                // var ly = 5.0 + 5.0 * Math.sin(t / 3.0);
+                // rectLight.position.set(lx, ly, lz);
 
                 cube.rotation.x += controls.rotationSpeed
                 cube.rotation.y += controls.rotationSpeed
